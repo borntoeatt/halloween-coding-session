@@ -18,8 +18,4 @@ resource "proxmox_virtual_environment_container" "testbox" {
   }
   start_on_boot = false
   started       = true
-}
-output "testbox_vmid" {
-  value = proxmox_virtual_environment_container.testbox.id
-}
 
