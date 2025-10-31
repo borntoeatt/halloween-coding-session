@@ -6,8 +6,8 @@ pipeline {
   }
 
   environment {
-    PROXMOX_TOKEN = credentials('proxmox-token-test')
-    SSH_KEY = credentials('ssh-key-test')
+    PROXMOX_TOKEN = credentials('proxmox-token')
+    SSH_KEY = credentials('ssh-key')
   }
 
   stages {
