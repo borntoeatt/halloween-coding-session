@@ -118,7 +118,7 @@ for container in "${containers[@]}"; do
 
     echo "🔐 Injecting SSH key into $container..."
     ssh $SSH_OPTS "$PROXMOX_SSH" "pct exec $vmid -- mkdir -p /root/.ssh"
-    ssh $SSH_OPTS "$PROXMOX_SSH" "pct exec $vmid -- bash -c \"echo '$(cat ${SSH_KEY_FILE}.pub)' >> /root/.ssh/authorized_keys\""
+    ssh $SSH_OPTS "$PROXMOX_SSH" "pct exec $vmid -- bash -c \"echo '${SSH_KEY}' >> /root/.ssh/authorized_keys\""
     ssh $SSH_OPTS "$PROXMOX_SSH" "pct exec $vmid -- chmod 600 /root/.ssh/authorized_keys"
 done
 
