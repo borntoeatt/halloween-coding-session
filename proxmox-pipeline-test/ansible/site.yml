@@ -1,1 +1,6 @@
+- name: Configure test container
+  hosts: all
+  become: true
+  roles:
+    - { role: testbox, when: "'testbox' in inventory_hostname", tags: ['testbox'] }
 
