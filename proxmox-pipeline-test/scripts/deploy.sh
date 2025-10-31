@@ -7,6 +7,7 @@ set -euo pipefail
 PROXMOX_IP="192.168.0.100"
 PROXMOX_USER="root"
 PROXMOX_SSH="$PROXMOX_USER@$PROXMOX_IP"
+SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
 BASE_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 TF_DIR="$BASE_DIR/terraform"
@@ -85,7 +86,7 @@ for container in "${containers[@]}"; do
     echo "⏳ Waiting for container $container (VMID $vmid) to get an IP..."
 
     boot_retries=0
-    while [[ "$(ssh "$PROXMOX_SSH" "pct status $vmid" | grep -c 'status: running')" -eq 0 && $boot_retries -lt $MAX_RETRIES ]]; do
+    while [[ "$(ssh $SSH_OPTS "$PROXMOX_SSH" "pct status $vmid" | grep -c 'status: running')" -eq 0 && $boot_retries -lt $MAX_RETRIES ]]; do
         echo -ne "🕒 Waiting for $container to boot... Attempt $((boot_retries+1)) of $MAX_RETRIES\r"
         ((boot_retries++))
         sleep $SLEEP_INTERVAL
@@ -100,7 +101,7 @@ for container in "${containers[@]}"; do
     retries=0
     while [[ -z "$ip" && $retries -lt $MAX_RETRIES ]]; do
         echo -ne "🔄 Attempt $((retries+1)) of $MAX_RETRIES...\r"
-        raw_output=$(ssh "$PROXMOX_SSH" "pct exec $vmid -- ip a" 2>/dev/null || true)
+        raw_output=$(ssh $SSH_OPTS "$PROXMOX_SSH" "pct exec $vmid -- ip a" 2>/dev/null || true)
         ip=$(echo "$raw_output" | awk '/inet / && $2 !~ /^127/ {print $2}' | cut -d/ -f1 | head -n1)
         if [[ -n "$ip" ]]; then
             echo "🌐 $container IP acquired: $ip"
@@ -117,9 +118,9 @@ for container in "${containers[@]}"; do
     fi
 
     echo "🔐 Injecting SSH key into $container..."
-    ssh "$PROXMOX_SSH" "pct exec $vmid -- mkdir -p /root/.ssh"
-    ssh "$PROXMOX_SSH" "pct exec $vmid -- bash -c \"echo '$SSH_KEY' >> /root/.ssh/authorized_keys\""
-    ssh "$PROXMOX_SSH" "pct exec $vmid -- chmod 600 /root/.ssh/authorized_keys"
+    ssh $SSH_OPTS "$PROXMOX_SSH" "pct exec $vmid -- mkdir -p /root/.ssh"
+    ssh $SSH_OPTS "$PROXMOX_SSH" "pct exec $vmid -- bash -c \"echo '$SSH_KEY' >> /root/.ssh/authorized_keys\""
+    ssh $SSH_OPTS "$PROXMOX_SSH" "pct exec $vmid -- chmod 600 /root/.ssh/authorized_keys"
 done
 
 # ------------------------------
@@ -150,4 +151,3 @@ fi
 
 echo "✅ Ansible playbooks completed."
 echo "🎉 Deployment completed successfully!"
-
