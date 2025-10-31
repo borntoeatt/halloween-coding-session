@@ -1,3 +1,9 @@
+provider "proxmox" {
+  endpoint  = "https://192.168.0.100:8006/api2/json"
+  api_token = var.proxmox_token
+  insecure  = true
+}
+
 resource "proxmox_virtual_environment_container" "testbox" {
   node_name = "pve"
   vm_id     = 20001
