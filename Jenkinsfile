@@ -7,16 +7,21 @@ pipeline {
 
   environment {
     PROXMOX_TOKEN = credentials('proxmox-token')
-    SSH_KEY = credentials('ssh-key')
   }
 
   stages {
     stage('Deploy Test Containers') {
       steps {
-        sh '''
-          chmod +x proxmox-pipeline-test/scripts/deploy.sh
-          ./proxmox-pipeline-test/scripts/deploy.sh ${TEST_ROLES}
-        '''
+        withCredentials([
+          sshUserPrivateKey(credentialsId: 'SSH_PRIVATE', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')
+        ]) {
+          sh '''
+            chmod +x proxmox-pipeline-test/scripts/deploy.sh
+            export SSH_KEY_FILE=${SSH_KEY_FILE}
+            export SSH_USER=${SSH_USER}
+            ./proxmox-pipeline-test/scripts/deploy.sh ${TEST_ROLES}
+          '''
+        }
       }
     }
   }
