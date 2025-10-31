@@ -130,7 +130,8 @@ echo "📝 Creating Ansible inventory at $INVENTORY_FILE..."
     echo "[all]"
     for container in "${containers[@]}"; do
         if [[ -n "${ips[$container]:-}" ]]; then
-            echo "$container ansible_host=${ips[$container]} ansible_user=root ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'"
+            echo "$container ansible_host=${ips[$container]} ansible_user=root ansible_ssh_private_key_file=${SSH_KEY_FILE} ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'"
+
         fi
     done
 } > "$INVENTORY_FILE"
