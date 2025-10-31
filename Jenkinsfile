@@ -14,8 +14,8 @@ pipeline {
     stage('Deploy Test Containers') {
       steps {
         sh '''
-          chmod +x scripts/deploy.sh
-          ./scripts/deploy.sh ${TEST_ROLES}
+          chmod +x proxmox-pipeline-test/scripts/deploy.sh
+          ./proxmox-pipeline-test/scripts/deploy.sh ${TEST_ROLES}
         '''
       }
     }
