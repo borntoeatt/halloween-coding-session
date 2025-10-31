@@ -11,7 +11,7 @@ pipeline {
   }
 
   stages {
-    stage('Deploy') {
+    stage('Deploy Test Containers') {
       steps {
         sh '''
           chmod +x scripts/deploy.sh
