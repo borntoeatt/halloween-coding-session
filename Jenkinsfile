@@ -7,6 +7,7 @@ pipeline {
 
   environment {
     PROXMOX_TOKEN = credentials('proxmox-token')
+    SSH_KEY = credentials('ssh-key') // public key
   }
 
   stages {
@@ -19,6 +20,7 @@ pipeline {
             chmod +x proxmox-pipeline-test/scripts/deploy.sh
             export SSH_KEY_FILE=${SSH_KEY_FILE}
             export SSH_USER=${SSH_USER}
+            export SSH_KEY="${SSH_KEY}"
             ./proxmox-pipeline-test/scripts/deploy.sh ${TEST_ROLES}
           '''
         }
