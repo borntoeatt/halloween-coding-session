@@ -1,0 +1,4 @@
+- hosts: testbox
+  become: true
+  roles:
+    - testbox
