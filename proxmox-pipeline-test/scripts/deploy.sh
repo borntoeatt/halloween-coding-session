@@ -142,6 +142,9 @@ echo "📝 Creating Ansible inventory at $INVENTORY_FILE..."
 cd "$ANSIBLE_DIR"
 echo "🛠 Running Ansible playbooks..."
 
+# Set dynamic role path
+export ANSIBLE_ROLES_PATH="$ANSIBLE_DIR/roles"
+
 if [[ "${SELECTED_ROLES[*]}" == "all" ]]; then
     ansible-playbook -i "$INVENTORY_FILE" site.yml
 else
@@ -163,6 +166,7 @@ for container in "${containers[@]}"; do
     echo "⚠️ No playbook found for $container at $playbook_path — skipping."
   fi
 done
+
 
 echo "✅ Ansible playbooks completed."
 echo "🎉 Deployment completed successfully!"
