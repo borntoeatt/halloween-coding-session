@@ -149,5 +149,20 @@ else
     ansible-playbook -i "$INVENTORY_FILE" site.yml --tags "$tags"
 fi
 
+# ------------------------------
+# RUN CONTAINER-SPECIFIC PLAYBOOKS IF THEY EXIST
+# ------------------------------
+echo "🔍 Checking for container-specific playbooks..."
+
+for container in "${containers[@]}"; do
+  playbook_path="$ANSIBLE_DIR/playbooks/${container}.yml"
+  if [[ -f "$playbook_path" ]]; then
+    echo "📦 Running playbook for $container → $playbook_path"
+    ansible-playbook -i "$INVENTORY_FILE" "$playbook_path" --limit "$container"
+  else
+    echo "⚠️ No playbook found for $container at $playbook_path — skipping."
+  fi
+done
+
 echo "✅ Ansible playbooks completed."
 echo "🎉 Deployment completed successfully!"
