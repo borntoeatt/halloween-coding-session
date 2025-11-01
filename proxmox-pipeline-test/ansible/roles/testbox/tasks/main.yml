@@ -1,6 +1,4 @@
-- hosts: testbox
-  become: true
-  tasks:
+
 
     # Install base packages
     - name: Install required packages
@@ -13,6 +11,7 @@
           - lsb-release
           - python3
           - python3-pip
+          - python3-venv
         state: present
         update_cache: true
 
@@ -22,10 +21,10 @@
         url: https://download.docker.com/linux/debian/gpg
         state: present
 
-    # Add Docker repository
+    # Add Docker repository (hardcoded to bookworm for Debian 12)
     - name: Add Docker repository
       apt_repository:
-        repo: "deb [arch=amd64] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+        repo: "deb [arch=amd64] https://download.docker.com/linux/debian bookworm stable"
         state: present
 
     # Install Docker Engine
@@ -42,11 +41,15 @@
         state: started
         enabled: true
 
-    # Install Docker SDK for Python
-    - name: Install Docker SDK for Python
-      pip:
-        name: docker
-        executable: pip3
+    # Create virtual environment for Python SDK
+    - name: Create virtual environment for Docker SDK
+      command: python3 -m venv /opt/docker-venv
+      args:
+        creates: /opt/docker-venv
+
+    # Install Docker SDK in virtual environment
+    - name: Install Docker SDK in venv
+      command: /opt/docker-venv/bin/pip install docker
 
     # Add test user to docker group
     - name: Add user to docker group
@@ -68,6 +71,12 @@
         dest: /home/ansible/static/index.html
         content: "<h1>Hello from dockerized Ansible</h1>"
         mode: '0644'
+    # Install Python requests module for Ansible
+    - name: Install Python requests module for Ansible
+      apt:
+        name: python3-requests
+        state: present
+
 
     # Run Nginx container to serve static page
     - name: Run Nginx container for static site
