@@ -38,7 +38,7 @@ resource "proxmox_virtual_environment_container" "testbox" {
 
 
 # Nextcloud container
-esource "proxmox_virtual_environment_container" "nextcloud" {
+resource "proxmox_virtual_environment_container" "nextcloud" {
   depends_on = [proxmox_virtual_environment_container.testbox]
   node_name = "pve"
   vm_id     = 20009
