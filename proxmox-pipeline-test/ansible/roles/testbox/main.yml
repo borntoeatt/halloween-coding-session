@@ -6,11 +6,12 @@
     state: present
   become: true
 
-- name: Ensure Apache is running
+- name: Start Apache using service module
   service:
     name: apache2
     state: started
     enabled: true
+
 - name: Create test user
   user:
     name: ansibletest
