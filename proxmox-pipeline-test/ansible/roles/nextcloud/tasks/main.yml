@@ -65,3 +65,8 @@
       command: a2dissite 000-default.conf
       notify: Restart Apache
 
+    - handlers:
+    - name: Restart Apache
+      service:
+        name: apache2
+        state: restarted
