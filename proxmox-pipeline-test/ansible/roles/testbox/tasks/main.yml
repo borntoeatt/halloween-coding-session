@@ -76,16 +76,20 @@
       apt:
         name: python3-requests
         state: present
-
-
+    # Remove existing Nginx container if present
+    - name: Remove existing Nginx container if present
+      community.docker.docker_container:
+       name: static-site
+       state: absent
+       force_kill: true
     # Run Nginx container to serve static page
     - name: Run Nginx container for static site
       community.docker.docker_container:
-        name: static-site
-        image: nginx:alpine
-        state: started
-        ports:
-          - "8080:80"
-        volumes:
-          - /home/ansible/static/index.html:/usr/share/nginx/html/index.html:ro
-        restart_policy: always
+       name: static-site
+       image: nginx:alpine
+       state: started
+       ports:
+       - "8080:80"
+       volumes:
+       - /home/ansible/static/index.html:/usr/share/nginx/html/index.html:ro
+       restart_policy: always
