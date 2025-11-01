@@ -1,6 +1,3 @@
-- hosts: testbox
-  become: true
-  tasks:
 
     # Install base packages
     - name: Install required packages
