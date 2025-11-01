@@ -69,7 +69,7 @@
     - name: Create static HTML page
       copy:
         dest: /home/ansible/static/index.html
-        content: "<h1>Hello from dockerized Ansible</h1>"
+        content: "<h1>Hello from borntoeatt's Terraform/Ansible Jenkins automation</h1>"
         mode: '0644'
     # Install Python requests module for Ansible
     - name: Install Python requests module for Ansible
