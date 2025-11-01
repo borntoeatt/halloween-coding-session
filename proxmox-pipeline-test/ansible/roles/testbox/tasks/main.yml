@@ -71,6 +71,12 @@
         dest: /home/ansible/static/index.html
         content: "<h1>Hello from dockerized Ansible</h1>"
         mode: '0644'
+    # Install Python requests module for Ansible
+    - name: Install Python requests module for Ansible
+      apt:
+        name: python3-requests
+        state: present
+
 
     # Run Nginx container to serve static page
     - name: Run Nginx container for static site
