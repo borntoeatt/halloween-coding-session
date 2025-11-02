@@ -1,0 +1,4 @@
+- hosts: nextcloud
+  become: true
+  roles:
+    - nextcloud
