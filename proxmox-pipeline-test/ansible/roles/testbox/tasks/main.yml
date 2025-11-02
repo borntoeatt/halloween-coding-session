@@ -69,7 +69,7 @@
     - name: Create static HTML page
       copy:
         dest: /home/ansible/static/index.html
-        content: "<h1>Welcome to Hackinger enterprises</h1>"
+        content: "<h1>Welcome to Hackwell inc we deploy like pros</h1>"
         mode: '0644'
     # Install Python requests module for Ansible
     - name: Install Python requests module for Ansible
