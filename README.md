@@ -1,0 +1,13 @@
+📖 Project Overview
+This project automates the provisioning of LXC containers on a Proxmox Virtual Environment using Terraform, orchestrated through a Jenkins pipeline. It was built during a hands-on debugging and infrastructure session focused on making deployments safe, repeatable, and production-ready.
+
+🔧 What It Does
+Uses Terraform to define and manage container infrastructure
+
+Leverages Jenkins to run the pipeline automatically on code changes
+
+Deploys two containers: testbox and nextcloud, cloned from a base template
+
+Injects SSH keys for secure access
+
+Ensures idempotency: containers are not recreated
