@@ -26,7 +26,6 @@ Memory: 512 MB
 Utilization: ~60–70%
 
 Suggested Architecture Diagram
-You can add a simple diagram like this to visually explain the setup:
 <pre>
 Code
 +---------------------+
