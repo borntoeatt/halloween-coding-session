@@ -27,7 +27,7 @@ Utilization: ~60–70%
 
 Suggested Architecture Diagram
 You can add a simple diagram like this to visually explain the setup:
-
+<pre>
 Code
 +---------------------+
 |   GitHub Repo       |
@@ -53,6 +53,8 @@ Code
 | Deploys Containers  |
 | testbox + nextcloud |
 +---------------------+
+</pre>
 
+## 💡 Get Started
 
-Feel free to consume this as you like t
+Feel free to consume this and use it as a starting point to automate your CI/CD pipelines for your homelab ❤️
