@@ -1,127 +1,62 @@
-# Install base packages
-- name: Install required packages
-  apt:
-    name:
-      - ca-certificates
-      - curl
-      - gnupg
-      - lsb-release
-      - python3
-      - python3-pip
-      - python3-venv
-      - apt-transport-https
-    state: present
-    update_cache: true
+- name: Install and run Podman static site
+  hosts: testbox
+  become: true
+  tasks:
 
-# Download Docker CE 26.1.3
-- name: Download Docker CE 26.1.3
-  get_url:
-    url: https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/docker-ce_5%3a26.1.3~3-0~debian-bullseye_amd64.deb
-    dest: /tmp/docker-ce.deb
+    # Install Podman and dependencies
+    - name: Install Podman and rootless dependencies
+      apt:
+        name:
+          - podman
+          - uidmap
+          - slirp4netns
+          - fuse-overlayfs
+        state: present
+        update_cache: true
 
-# Download Docker CLI 26.1.3
-- name: Download Docker CLI 26.1.3
-  get_url:
-    url: https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/docker-ce-cli_5%3a26.1.3~3-0~debian-bullseye_amd64.deb
-    dest: /tmp/docker-ce-cli.deb
+    # Create a non-root user for rootless Podman
+    - name: Ensure ansibletest user exists
+      user:
+        name: ansibletest
+        shell: /bin/bash
+        create_home: true
 
-# Download containerd.io 1.6.20
-- name: Download containerd.io 1.6.20
-  get_url:
-    url: https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/containerd.io_1.6.20-1_amd64.deb
-    dest: /tmp/containerd.io.deb
+    # Enable subuid/subgid for rootless containers
+    - name: Configure subuid and subgid
+      lineinfile:
+        path: "{{ item.path }}"
+        line: "{{ item.line }}"
+        create: yes
+      loop:
+        - { path: /etc/subuid, line: "ansibletest:100000:65536" }
+        - { path: /etc/subgid, line: "ansibletest:100000:65536" }
 
-# Install Docker and containerd from .deb files
-- name: Install Docker and containerd from .deb files
-  apt:
-    deb: "{{ item }}"
-  loop:
-    - /tmp/containerd.io.deb
-    - /tmp/docker-ce-cli.deb
-    - /tmp/docker-ce.deb
+    # Create static HTML content
+    - name: Create static HTML directory
+      file:
+        path: /home/ansibletest/static
+        state: directory
+        owner: ansibletest
+        group: ansibletest
+        mode: '0755'
 
-# Hold Docker packages to prevent upgrades
-- name: Hold Docker packages
-  dpkg_selections:
-    name: "{{ item }}"
-    selection: hold
-  loop:
-    - docker-ce
-    - docker-ce-cli
-    - containerd.io
+    - name: Create static HTML page
+      copy:
+        dest: /home/ansibletest/static/index.html
+        content: "<h1>Welcome to Hackwell inc — we deploy like pros</h1>"
+        owner: ansibletest
+        group: ansibletest
+        mode: '0644'
 
-# Remove existing runc
-- name: Remove runc if installed
-  apt:
-    name: runc
-    state: absent
-
-# Install runc v1.1.7
-- name: Install runc v1.1.7
-  get_url:
-    url: https://github.com/opencontainers/runc/releases/download/v1.1.7/runc.amd64
-    dest: /usr/sbin/runc
-    mode: '0755'
-
-# Start and enable Docker service
-- name: Ensure Docker is running
-  service:
-    name: docker
-    state: started
-    enabled: true
-
-# Create virtual environment for Python SDK
-- name: Create virtual environment for Docker SDK
-  command: python3 -m venv /opt/docker-venv
-  args:
-    creates: /opt/docker-venv
-
-# Install Docker SDK in virtual environment
-- name: Install Docker SDK in venv
-  command: /opt/docker-venv/bin/pip install docker
-
-# Add test user to docker group
-- name: Add user to docker group
-  user:
-    name: ansibletest
-    groups: docker
-    append: true
-
-# Create static HTML directory
-- name: Create static HTML directory
-  file:
-    path: /home/ansible/static
-    state: directory
-    mode: '0755'
-
-# Create static HTML page
-- name: Create static HTML page
-  copy:
-    dest: /home/ansible/static/index.html
-    content: "<h1>Welcome to Hackwell inc we deploy like pros</h1>"
-    mode: '0644'
-
-# Install Python requests module for Ansible
-- name: Install Python requests module for Ansible
-  apt:
-    name: python3-requests
-    state: present
-
-# Remove existing Nginx container if present
-- name: Remove existing Nginx container if present
-  community.docker.docker_container:
-    name: static-site
-    state: absent
-    force_kill: true
-
-# Run Nginx container for static site
-- name: Run Nginx container for static site
-  community.docker.docker_container:
-    name: static-site
-    image: nginx:stable
-    state: started
-    ports:
-      - "8080:80"
-    volumes:
-      - /home/ansible/static/index.html:/usr/share/nginx/html/index.html:ro
-    restart_policy: always
+    # Run Podman container as ansibletest user
+    - name: Run rootless Podman container
+      become: true
+      become_user: ansibletest
+      shell: |
+        podman container exists static-site && podman rm -f static-site || true
+        podman run -d --name static-site \
+          -p 8080:80 \
+          -v /home/ansibletest/static:/usr/share/nginx/html:ro \
+          docker.io/library/nginx:stable
+      args:
+        executable: /bin/bash
