@@ -1,52 +1,28 @@
-- name: Install Podman and rootless dependencies
+- name: Install Podman and dependencies
   apt:
     name:
       - podman
-      - uidmap
-      - slirp4netns
-      - fuse-overlayfs
     state: present
     update_cache: true
 
-- name: Ensure ansibletest user exists
-  user:
-    name: ansibletest
-    shell: /bin/bash
-    create_home: true
-
-- name: Configure subuid and subgid
-  lineinfile:
-    path: "{{ item.path }}"
-    line: "{{ item.line }}"
-    create: yes
-  loop:
-    - { path: /etc/subuid, line: "ansibletest:100000:65536" }
-    - { path: /etc/subgid, line: "ansibletest:100000:65536" }
-
 - name: Create static HTML directory
   file:
-    path: /home/ansibletest/static
+    path: /opt/static
     state: directory
-    owner: ansibletest
-    group: ansibletest
     mode: '0755'
 
 - name: Create static HTML page
   copy:
-    dest: /home/ansibletest/static/index.html
+    dest: /opt/static/index.html
     content: "<h1>Welcome to Hackwell inc — we deploy like pros</h1>"
-    owner: ansibletest
-    group: ansibletest
     mode: '0644'
 
-- name: Run rootless Podman container
-  become: true
-  become_user: ansibletest
+- name: Run Podman container as root
   shell: |
     podman container exists static-site && podman rm -f static-site || true
     podman run -d --name static-site \
       -p 8080:80 \
-      -v /home/ansibletest/static:/usr/share/nginx/html:ro \
+      -v /opt/static:/usr/share/nginx/html:ro \
       docker.io/library/nginx:stable
   args:
     executable: /bin/bash
