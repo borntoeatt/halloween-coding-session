@@ -84,12 +84,14 @@
        force_kill: true
     # Run Nginx container to serve static page
     - name: Run Nginx container for static site
-      community.docker.docker_container:
-       name: static-site
-       image: nginx:latest
-       state: started
-       ports:
-       - "8080:80"
-       volumes:
-       - /home/ansible/static/index.html:/usr/share/nginx/html/index.html:ro
-       restart_policy: always
+- name: Run Nginx container for static site
+  community.docker.docker_container:
+    name: static-site
+    image: nginx:stable
+    state: started
+    ports:
+      - "8080:80"
+    volumes:
+      - /home/ansible/static/index.html:/usr/share/nginx/html/index.html:ro
+    restart_policy: always
+    privileged: true
