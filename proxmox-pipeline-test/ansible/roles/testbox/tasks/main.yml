@@ -83,7 +83,6 @@
        state: absent
        force_kill: true
     # Run Nginx container to serve static page
-    - name: Run Nginx container for static site
 - name: Run Nginx container for static site
   community.docker.docker_container:
     name: static-site
