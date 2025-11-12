@@ -13,16 +13,16 @@
     state: present
     update_cache: true
 
-# Download Docker CE 26.1.4
-- name: Download Docker CE 26.1.4
+# Download Docker CE 26.1.3
+- name: Download Docker CE 26.1.3
   get_url:
-    url: https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/docker-ce_5%3a26.1.4~3-0~debian-bullseye_amd64.deb
+    url: https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/docker-ce_5%3a26.1.3~3-0~debian-bullseye_amd64.deb
     dest: /tmp/docker-ce.deb
 
-# Download Docker CLI 26.1.4
-- name: Download Docker CLI 26.1.4
+# Download Docker CLI 26.1.3
+- name: Download Docker CLI 26.1.3
   get_url:
-    url: https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/docker-ce-cli_5%3a26.1.4~3-0~debian-bullseye_amd64.deb
+    url: https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/docker-ce-cli_5%3a26.1.3~3-0~debian-bullseye_amd64.deb
     dest: /tmp/docker-ce-cli.deb
 
 # Download containerd.io 1.6.20
@@ -56,7 +56,7 @@
     name: runc
     state: absent
 
-# Download runc v1.1.7
+# Install runc v1.1.7
 - name: Install runc v1.1.7
   get_url:
     url: https://github.com/opencontainers/runc/releases/download/v1.1.7/runc.amd64
