@@ -1,62 +1,52 @@
-    - name: Install and run Podman static site
-      hosts: testbox
-      become: true
-      tasks:
+- name: Install Podman and rootless dependencies
+  apt:
+    name:
+      - podman
+      - uidmap
+      - slirp4netns
+      - fuse-overlayfs
+    state: present
+    update_cache: true
 
-    # Install Podman and dependencies
-    - name: Install Podman and rootless dependencies
-      apt:
-        name:
-          - podman
-          - uidmap
-          - slirp4netns
-          - fuse-overlayfs
-        state: present
-        update_cache: true
+- name: Ensure ansibletest user exists
+  user:
+    name: ansibletest
+    shell: /bin/bash
+    create_home: true
 
-    # Create a non-root user for rootless Podman
-    - name: Ensure ansibletest user exists
-      user:
-        name: ansibletest
-        shell: /bin/bash
-        create_home: true
+- name: Configure subuid and subgid
+  lineinfile:
+    path: "{{ item.path }}"
+    line: "{{ item.line }}"
+    create: yes
+  loop:
+    - { path: /etc/subuid, line: "ansibletest:100000:65536" }
+    - { path: /etc/subgid, line: "ansibletest:100000:65536" }
 
-    # Enable subuid/subgid for rootless containers
-    - name: Configure subuid and subgid
-      lineinfile:
-        path: "{{ item.path }}"
-        line: "{{ item.line }}"
-        create: yes
-      loop:
-        - { path: /etc/subuid, line: "ansibletest:100000:65536" }
-        - { path: /etc/subgid, line: "ansibletest:100000:65536" }
+- name: Create static HTML directory
+  file:
+    path: /home/ansibletest/static
+    state: directory
+    owner: ansibletest
+    group: ansibletest
+    mode: '0755'
 
-    # Create static HTML content
-    - name: Create static HTML directory
-      file:
-        path: /home/ansibletest/static
-        state: directory
-        owner: ansibletest
-        group: ansibletest
-        mode: '0755'
+- name: Create static HTML page
+  copy:
+    dest: /home/ansibletest/static/index.html
+    content: "<h1>Welcome to Hackwell inc — we deploy like pros</h1>"
+    owner: ansibletest
+    group: ansibletest
+    mode: '0644'
 
-    - name: Create static HTML page
-      copy:
-        dest: /home/ansibletest/static/index.html
-        content: "<h1>Welcome to Hackwell inc — we deploy like pros</h1>"
-        owner: ansibletest
-        group: ansibletest
-        mode: '0644'
-
-    # Run Podman container as ansibletest user
-    - name: Run rootless Podman container
-      become: true
-      become_user: ansibletest
-      shell: |
-        podman container exists static-site && podman rm -f static-site || true
-        podman run -d --name static-site \
-          -p 8080:80 \
-          -v /home/ansibletest/static:/usr/share/nginx/html:ro \
-          docker.io/library/nginx:stable
-      args:
-        executable: /bin/bash
+- name: Run rootless Podman container
+  become: true
+  become_user: ansibletest
+  shell: |
+    podman container exists static-site && podman rm -f static-site || true
+    podman run -d --name static-site \
+      -p 8080:80 \
+      -v /home/ansibletest/static:/usr/share/nginx/html:ro \
+      docker.io/library/nginx:stable
+  args:
+    executable: /bin/bash
