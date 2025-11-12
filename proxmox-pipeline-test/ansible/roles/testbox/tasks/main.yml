@@ -1,7 +1,11 @@
+---
+- name: Install and run static Nginx site with Docker
+  hosts: testbox
+  become: true
+  tasks:
 
-
-    # Install base packages
-    - name: Install required packages
+    # Install base dependencies
+    - name: Install required base packages
       apt:
         name:
           - apt-transport-https
@@ -12,6 +16,7 @@
           - python3
           - python3-pip
           - python3-venv
+          - python3-requests
         state: present
         update_cache: true
 
@@ -21,38 +26,43 @@
         url: https://download.docker.com/linux/debian/gpg
         state: present
 
-    # Add Docker repository (hardcoded to bookworm for Debian 12)
+    # Add Docker APT repository (Debian 12 Bookworm)
     - name: Add Docker repository
       apt_repository:
         repo: "deb [arch=amd64] https://download.docker.com/linux/debian bookworm stable"
         state: present
 
-    # Install Docker Engine
-    - name: Install Docker
+    # Ensure Docker and container runtime are the latest versions
+    - name: Ensure latest Docker engine and runtime are installed
       apt:
-        name: docker-ce
-        state: present
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: latest
         update_cache: true
 
-    # Start and enable Docker service
-    - name: Ensure Docker is running
+    # Start and enable Docker
+    - name: Ensure Docker service is running and enabled
       service:
         name: docker
         state: started
         enabled: true
 
-    # Create virtual environment for Python SDK
-    - name: Create virtual environment for Docker SDK
+    # Create a virtual environment for Python Docker SDK
+    - name: Create Python venv for Docker SDK
       command: python3 -m venv /opt/docker-venv
       args:
         creates: /opt/docker-venv
 
-    # Install Docker SDK in virtual environment
-    - name: Install Docker SDK in venv
+    # Install Docker SDK into the venv
+    - name: Install Docker SDK in virtual environment
       command: /opt/docker-venv/bin/pip install docker
 
-    # Add test user to docker group
-    - name: Add user to docker group
+    # Add ansibletest user to docker group
+    - name: Add ansibletest user to docker group
       user:
         name: ansibletest
         groups: docker
@@ -65,31 +75,30 @@
         state: directory
         mode: '0755'
 
-    # Create static HTML page
-    - name: Create static HTML page
+    # Create static HTML file
+    - name: Create static HTML index page
       copy:
         dest: /home/ansible/static/index.html
-        content: "<h1>Welcome to Hackwell inc we deploy like pros</h1>"
+        content: "<h1>Welcome to Hackwell Inc — we deploy like pros 🚀</h1>"
         mode: '0644'
-    # Install Python requests module for Ansible
-    - name: Install Python requests module for Ansible
-      apt:
-        name: python3-requests
-        state: present
-    # Remove existing Nginx container if present
+
+    # Remove any existing Nginx container (for idempotence)
     - name: Remove existing Nginx container if present
       community.docker.docker_container:
-       name: static-site
-       state: absent
-       force_kill: true
-    # Run Nginx container to serve static page
+        name: static-site
+        state: absent
+        force_kill: true
+
+    # Run Nginx container for static site
     - name: Run Nginx container for static site
       community.docker.docker_container:
-       name: static-site
-       image: nginx:alpine
-       state: started
-       ports:
-       - "8080:80"
-       volumes:
-       - /home/ansible/static/index.html:/usr/share/nginx/html/index.html:ro
-       restart_policy: always
+        name: static-site
+        image: nginx:alpine
+        state: started
+        restart_policy: always
+        ports:
+          - "8080:80"
+        volumes:
+          - /home/ansible/static/index.html:/usr/share/nginx/html/index.html:ro
+        security_opts:
+          - seccomp=unconfined
