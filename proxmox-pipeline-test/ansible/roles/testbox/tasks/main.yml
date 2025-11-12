@@ -1,7 +1,7 @@
-- name: Install and run Podman static site
-  hosts: testbox
-  become: true
-  tasks:
+    - name: Install and run Podman static site
+      hosts: testbox
+      become: true
+      tasks:
 
     # Install Podman and dependencies
     - name: Install Podman and rootless dependencies
