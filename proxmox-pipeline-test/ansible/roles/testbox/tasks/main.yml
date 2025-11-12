@@ -1,104 +1,89 @@
 ---
-- name: Install and run static Nginx site with Docker
-  hosts: testbox
-  become: true
-  tasks:
+# roles/testbox/tasks/main.yml
 
-    # Install base dependencies
-    - name: Install required base packages
-      apt:
-        name:
-          - apt-transport-https
-          - ca-certificates
-          - curl
-          - gnupg
-          - lsb-release
-          - python3
-          - python3-pip
-          - python3-venv
-          - python3-requests
-        state: present
-        update_cache: true
+- name: Install required base packages
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+      - python3
+      - python3-pip
+      - python3-venv
+      - python3-requests
+    state: present
+    update_cache: true
 
-    # Add Docker GPG key
-    - name: Add Docker GPG key
-      apt_key:
-        url: https://download.docker.com/linux/debian/gpg
-        state: present
+- name: Add Docker GPG key
+  apt_key:
+    url: https://download.docker.com/linux/debian/gpg
+    state: present
 
-    # Add Docker APT repository (Debian 12 Bookworm)
-    - name: Add Docker repository
-      apt_repository:
-        repo: "deb [arch=amd64] https://download.docker.com/linux/debian bookworm stable"
-        state: present
+- name: Add Docker repository
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/debian {{ ansible_distribution_release | default('bookworm') }} stable"
+    state: present
 
-    # Ensure Docker and container runtime are the latest versions
-    - name: Ensure latest Docker engine and runtime are installed
-      apt:
-        name:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-          - docker-buildx-plugin
-          - docker-compose-plugin
-        state: latest
-        update_cache: true
+- name: Ensure latest Docker engine and runtime are installed
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: latest
+    update_cache: true
 
-    # Start and enable Docker
-    - name: Ensure Docker service is running and enabled
-      service:
-        name: docker
-        state: started
-        enabled: true
+- name: Ensure Docker service is running and enabled
+  service:
+    name: docker
+    state: started
+    enabled: true
 
-    # Create a virtual environment for Python Docker SDK
-    - name: Create Python venv for Docker SDK
-      command: python3 -m venv /opt/docker-venv
-      args:
-        creates: /opt/docker-venv
+- name: Create Python venv for Docker SDK
+  command: python3 -m venv /opt/docker-venv
+  args:
+    creates: /opt/docker-venv
 
-    # Install Docker SDK into the venv
-    - name: Install Docker SDK in virtual environment
-      command: /opt/docker-venv/bin/pip install docker
+- name: Install Docker SDK in virtual environment
+  command: /opt/docker-venv/bin/pip install docker
 
-    # Add ansibletest user to docker group
-    - name: Add ansibletest user to docker group
-      user:
-        name: ansibletest
-        groups: docker
-        append: true
+- name: Add ansibletest user to docker group
+  user:
+    name: ansibletest
+    groups: docker
+    append: true
 
-    # Create static HTML directory
-    - name: Create static HTML directory
-      file:
-        path: /home/ansible/static
-        state: directory
-        mode: '0755'
+- name: Create static HTML directory
+  file:
+    path: /home/ansible/static
+    state: directory
+    mode: '0755'
 
-    # Create static HTML file
-    - name: Create static HTML index page
-      copy:
-        dest: /home/ansible/static/index.html
-        content: "<h1>Welcome to Hackwell Inc — we deploy like pros 🚀</h1>"
-        mode: '0644'
+- name: Create static HTML index page
+  copy:
+    dest: /home/ansible/static/index.html
+    content: "<h1>Welcome to Hackwell Inc — we deploy like pros 🚀</h1>"
+    mode: '0644'
 
-    # Remove any existing Nginx container (for idempotence)
-    - name: Remove existing Nginx container if present
-      community.docker.docker_container:
-        name: static-site
-        state: absent
-        force_kill: true
+- name: Remove existing Nginx container if present
+  community.docker.docker_container:
+    name: static-site
+    state: absent
+    force_kill: true
 
-    # Run Nginx container for static site
-    - name: Run Nginx container for static site
-      community.docker.docker_container:
-        name: static-site
-        image: nginx:alpine
-        state: started
-        restart_policy: always
-        ports:
-          - "8080:80"
-        volumes:
-          - /home/ansible/static/index.html:/usr/share/nginx/html/index.html:ro
-        security_opts:
-          - seccomp=unconfined
+- name: Run Nginx container for static site
+  community.docker.docker_container:
+    name: static-site
+    image: nginx:alpine
+    state: started
+    restart_policy: always
+    ports:
+      - "8080:80"
+    volumes:
+      - /home/ansible/static/index.html:/usr/share/nginx/html/index.html:ro
+    security_opts:
+      - seccomp=unconfined
