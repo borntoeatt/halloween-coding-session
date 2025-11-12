@@ -2,6 +2,7 @@
 - name: Install required packages
   apt:
     name:
+      - apt-transport-https
       - ca-certificates
       - curl
       - gnupg
@@ -9,46 +10,27 @@
       - python3
       - python3-pip
       - python3-venv
-      - apt-transport-https
     state: present
     update_cache: true
 
-# Download Docker CE 27.0.1
-- name: Download Docker CE 27.0.1
-  get_url:
-    url: https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/docker-ce_5%3a27.0.1~3-0~debian-bullseye_amd64.deb
-    dest: /tmp/docker-ce.deb
+# Add Docker GPG key
+- name: Add Docker GPG key
+  apt_key:
+    url: https://download.docker.com/linux/debian/gpg
+    state: present
 
-# Download Docker CLI 27.0.1
-- name: Download Docker CLI 27.0.1
-  get_url:
-    url: https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/docker-ce-cli_5%3a27.0.1~3-0~debian-bullseye_amd64.deb
-    dest: /tmp/docker-ce-cli.deb
+# Add Docker repository (hardcoded to bookworm for Debian 12)
+- name: Add Docker repository
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/debian bookworm stable"
+    state: present
 
-# Download containerd.io 1.6.20
-- name: Download containerd.io 1.6.20
-  get_url:
-    url: https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/containerd.io_1.6.20-1_amd64.deb
-    dest: /tmp/containerd.io.deb
-
-# Install Docker and containerd from .deb files
-- name: Install Docker and containerd from .deb files
+# Install Docker Engine
+- name: Install Docker
   apt:
-    deb: "{{ item }}"
-  loop:
-    - /tmp/containerd.io.deb
-    - /tmp/docker-ce-cli.deb
-    - /tmp/docker-ce.deb
-
-# Hold Docker packages to prevent upgrades
-- name: Hold Docker packages
-  dpkg_selections:
-    name: "{{ item }}"
-    selection: hold
-  loop:
-    - docker-ce
-    - docker-ce-cli
-    - containerd.io
+    name: docker-ce
+    state: present
+    update_cache: true
 
 # Start and enable Docker service
 - name: Ensure Docker is running
@@ -101,14 +83,14 @@
     state: absent
     force_kill: true
 
-# Run Nginx container for static site
+# Run Nginx container for static site (unprivileged-safe)
 - name: Run Nginx container for static site
   community.docker.docker_container:
     name: static-site
-    image: nginx:stable
+    image: nginxinc/nginx-unprivileged
     state: started
     ports:
-      - "8080:80"
+      - "8080:8080"
     volumes:
       - /home/ansible/static/index.html:/usr/share/nginx/html/index.html:ro
     restart_policy: always
