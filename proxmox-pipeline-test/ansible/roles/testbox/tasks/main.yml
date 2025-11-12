@@ -1,28 +1,95 @@
-- name: Install Podman and dependencies
-  apt:
-    name:
-      - podman
-    state: present
-    update_cache: true
 
-- name: Create static HTML directory
-  file:
-    path: /opt/static
-    state: directory
-    mode: '0755'
 
-- name: Create static HTML page
-  copy:
-    dest: /opt/static/index.html
-    content: "<h1>Welcome to Hackwell inc — we deploy like pros</h1>"
-    mode: '0644'
+    # Install base packages
+    - name: Install required packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - python3
+          - python3-pip
+          - python3-venv
+        state: present
+        update_cache: true
 
-- name: Run Podman container as root
-  shell: |
-    podman container exists static-site && podman rm -f static-site || true
-    podman run -d --name static-site \
-      -p 8080:80 \
-      -v /opt/static:/usr/share/nginx/html:ro \
-      docker.io/library/nginx:stable
-  args:
-    executable: /bin/bash
+    # Add Docker GPG key
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/debian/gpg
+        state: present
+
+    # Add Docker repository (hardcoded to bookworm for Debian 12)
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/debian bookworm stable"
+        state: present
+
+    # Install Docker Engine
+    - name: Install Docker
+      apt:
+        name: docker-ce
+        state: present
+        update_cache: true
+
+    # Start and enable Docker service
+    - name: Ensure Docker is running
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    # Create virtual environment for Python SDK
+    - name: Create virtual environment for Docker SDK
+      command: python3 -m venv /opt/docker-venv
+      args:
+        creates: /opt/docker-venv
+
+    # Install Docker SDK in virtual environment
+    - name: Install Docker SDK in venv
+      command: /opt/docker-venv/bin/pip install docker
+
+    # Add test user to docker group
+    - name: Add user to docker group
+      user:
+        name: ansibletest
+        groups: docker
+        append: true
+
+    # Create static HTML directory
+    - name: Create static HTML directory
+      file:
+        path: /home/ansible/static
+        state: directory
+        mode: '0755'
+
+    # Create static HTML page
+    - name: Create static HTML page
+      copy:
+        dest: /home/ansible/static/index.html
+        content: "<h1>Welcome to Hackwell inc we deploy like pros</h1>"
+        mode: '0644'
+    # Install Python requests module for Ansible
+    - name: Install Python requests module for Ansible
+      apt:
+        name: python3-requests
+        state: present
+    # Remove existing Nginx container if present
+    - name: Remove existing Nginx container if present
+      community.docker.docker_container:
+       name: static-site
+       state: absent
+       force_kill: true
+    # Run Nginx container to serve static page
+    - name: Run Nginx container for static site
+      community.docker.docker_container:
+       name: static-site
+       image: nginx:alpine
+       state: started
+       ports:
+       - "8080:80"
+       volumes:
+       - /home/ansible/static/index.html:/usr/share/nginx/html/index.html:ro
+       restart_policy: always
