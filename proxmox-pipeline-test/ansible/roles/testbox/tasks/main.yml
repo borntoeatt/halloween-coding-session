@@ -2,7 +2,6 @@
 - name: Install required packages
   apt:
     name:
-      - apt-transport-https
       - ca-certificates
       - curl
       - gnupg
@@ -13,24 +12,15 @@
     state: present
     update_cache: true
 
-# Add Docker GPG key
-- name: Add Docker GPG key
-  apt_key:
-    url: https://download.docker.com/linux/debian/gpg
-    state: present
+# Install Docker using official convenience script
+- name: Download Docker install script
+  get_url:
+    url: https://get.docker.com
+    dest: /tmp/install-docker.sh
+    mode: '0755'
 
-# Add Docker repository (hardcoded to bookworm for Debian 12)
-- name: Add Docker repository
-  apt_repository:
-    repo: "deb [arch=amd64] https://download.docker.com/linux/debian bookworm stable"
-    state: present
-
-# Install Docker Engine
-- name: Install Docker
-  apt:
-    name: docker-ce
-    state: present
-    update_cache: true
+- name: Run Docker install script
+  command: /tmp/install-docker.sh
 
 # Start and enable Docker service
 - name: Ensure Docker is running
