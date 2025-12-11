@@ -70,7 +70,7 @@ resource "proxmox_virtual_environment_container" "nextcloud" {
   start_on_boot = false
   started       = true
 }
-# Nextcloud container
+# Passgen container
 resource "proxmox_virtual_environment_container" "passgen" {
   depends_on = [proxmox_virtual_environment_container.testbox]
   node_name = "pve"
