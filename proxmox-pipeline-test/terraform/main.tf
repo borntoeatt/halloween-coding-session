@@ -50,12 +50,10 @@ resource "proxmox_virtual_environment_container" "testbox" {
 }
 
 ###############################################
-# NEXTCLOUD (depends only if testbox deployed)
+# NEXTCLOUD (conditionally created)
 ###############################################
 resource "proxmox_virtual_environment_container" "nextcloud" {
   count = var.deploy_nextcloud ? 1 : 0
-
-  depends_on = var.deploy_testbox ? [proxmox_virtual_environment_container.testbox] : []
 
   node_name = "pve"
   vm_id     = 20009
@@ -64,7 +62,7 @@ resource "proxmox_virtual_environment_container" "nextcloud" {
     vm_id = 9001
   }
 
-  description = "Test nextcloud container"
+  description = "Nextcloud container"
 
   cpu {
     cores = 1
@@ -97,12 +95,10 @@ resource "proxmox_virtual_environment_container" "nextcloud" {
 }
 
 ###############################################
-# PASSGEN (depends only if testbox deployed)
+# PASSGEN (conditionally created)
 ###############################################
 resource "proxmox_virtual_environment_container" "passgen" {
   count = var.deploy_passgen ? 1 : 0
-
-  depends_on = var.deploy_testbox ? [proxmox_virtual_environment_container.testbox] : []
 
   node_name = "pve"
   vm_id     = 20010
