@@ -70,3 +70,36 @@ resource "proxmox_virtual_environment_container" "nextcloud" {
   start_on_boot = false
   started       = true
 }
+# Nextcloud container
+resource "proxmox_virtual_environment_container" "passgen" {
+  depends_on = [proxmox_virtual_environment_container.testbox]
+  node_name = "pve"
+  vm_id     = 20010
+  clone {
+    vm_id = 9001
+  }
+  description = "passgen"
+  cpu {
+    cores = 1
+  }
+  memory {
+    dedicated = 512
+  }
+  network_interface {
+    name   = "eth0"
+    bridge = "vmbr0"
+  }
+  features {
+    nesting = true
+  }
+  initialization {
+    hostname = "passgen"
+    ip_config {
+      ipv4 {
+        address = "dhcp"
+      }
+    }
+  }
+  start_on_boot = false
+  started       = true
+}
