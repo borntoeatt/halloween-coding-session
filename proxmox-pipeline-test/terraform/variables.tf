@@ -8,3 +8,21 @@ variable "ssh_key" {
   type        = string
   sensitive   = true
 }
+variable "deploy_testbox" {
+  type    = bool
+  default = true
+}
+
+variable "deploy_nextcloud" {
+  type    = bool
+  default = true
+}
+
+variable "deploy_passgen" {
+  type    = bool
+  default = true
+}
+
+variable "proxmox_token" {
+  type = string
+}
