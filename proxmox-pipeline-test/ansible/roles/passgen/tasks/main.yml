@@ -110,14 +110,3 @@
     dest: /etc/nginx/sites-enabled/passgen
     state: link
   notify: Restart nginx
-
-##############################################
-# Handlers
-##############################################
-handlers:
-  - name: Reload systemd
-    command: systemctl daemon-reload
-
-  - name: Restart passgen
-    systemd:
-      name:
