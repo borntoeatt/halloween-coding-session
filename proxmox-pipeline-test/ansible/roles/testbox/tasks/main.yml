@@ -16,15 +16,51 @@
     state: present
     update_cache: true
 
+##############################################
+# FIX: Determine correct Docker repo codename
+##############################################
+
+- name: Set Docker codename for Debian
+  set_fact:
+    docker_repo_codename: "{{ ansible_distribution_release }}"
+  when: ansible_os_family == "Debian"
+
+- name: Override incorrect codenames for Debian (e.g., noble)
+  set_fact:
+    docker_repo_codename: "bookworm"
+  when:
+    - ansible_os_family == "Debian"
+    - docker_repo_codename not in ["bookworm", "bullseye"]
+
+- name: Set Docker codename for Ubuntu
+  set_fact:
+    docker_repo_codename: "{{ ansible_distribution_release }}"
+  when: ansible_os_family == "Ubuntu"
+
+##############################################
+# Add Docker GPG key
+##############################################
+
 - name: Add Docker GPG key
   apt_key:
-    url: https://download.docker.com/linux/debian/gpg
+    url: https://download.docker.com/linux/{{ ansible_os_family | lower }}/gpg
     state: present
+
+##############################################
+# Add Correct Docker Repository
+##############################################
 
 - name: Add Docker repository
   apt_repository:
-    repo: "deb [arch=amd64] https://download.docker.com/linux/debian {{ ansible_distribution_release | default('bookworm') }} stable"
+    repo: >-
+      deb [arch=amd64]
+      https://download.docker.com/linux/{{ ansible_os_family | lower }}
+      {{ docker_repo_codename }} stable
     state: present
+
+##############################################
+# Install Docker Engine
+##############################################
 
 - name: Ensure latest Docker engine and runtime are installed
   apt:
@@ -43,6 +79,10 @@
     state: started
     enabled: true
 
+##############################################
+# Python venv for Docker SDK
+##############################################
+
 - name: Create Python venv for Docker SDK
   command: python3 -m venv /opt/docker-venv
   args:
@@ -51,11 +91,19 @@
 - name: Install Docker SDK in virtual environment
   command: /opt/docker-venv/bin/pip install docker
 
+##############################################
+# Add user to Docker group
+##############################################
+
 - name: Add ansibletest user to docker group
   user:
     name: ansibletest
     groups: docker
     append: true
+
+##############################################
+# Static HTML Test Site
+##############################################
 
 - name: Create static HTML directory
   file:
@@ -68,6 +116,10 @@
     dest: /home/ansible/static/index.html
     content: "<h1>Welcome to Hackwell Inc — we deploy like pros 🚀</h1>"
     mode: '0644'
+
+##############################################
+# Deploy Nginx Docker Container
+##############################################
 
 - name: Remove existing Nginx container if present
   community.docker.docker_container:
