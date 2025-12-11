@@ -27,13 +27,14 @@
     mode: '0755'
 
 ##############################################
-# Clone your repo
+# Clone your repository
 ##############################################
 - name: Clone passgen repository
   git:
     repo: "https://github.com/borntoeatt/halloween-coding-session.git"
     dest: /opt/passgen
     version: main
+    force: yes
   notify: Restart passgen
 
 ##############################################
@@ -45,12 +46,12 @@
     creates: /opt/passgen/venv
 
 ##############################################
-# Install Python dependencies into venv
+# Install ONLY Flask (no requirements.txt needed)
 ##############################################
-- name: Install Python dependencies
-  command: /opt/passgen/venv/bin/pip install -r /opt/passgen/requirements.txt
-  args:
-    chdir: /opt/passgen
+- name: Install Flask inside venv
+  command: /opt/passgen/venv/bin/pip install flask
+  register: flask_install
+  changed_when: "'Successfully installed' in flask_install.stdout"
   notify: Restart passgen
 
 ##############################################
@@ -67,7 +68,7 @@
 
       [Service]
       WorkingDirectory=/opt/passgen
-      ExecStart=/opt/passgen/venv/bin/python3 app.py
+      ExecStart=/opt/passgen/venv/bin/python3 /opt/passgen/app.py
       Restart=always
       User=root
 
@@ -94,7 +95,7 @@
     content: |
       server {
           listen 80;
-          server_name passgen.local;
+          server_name _;
 
           location / {
               proxy_pass http://127.0.0.1:5000;
@@ -110,3 +111,13 @@
     dest: /etc/nginx/sites-enabled/passgen
     state: link
   notify: Restart nginx
+
+##############################################
+# Remove default nginx site
+##############################################
+- name: Remove default nginx site
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Restart nginx
+
