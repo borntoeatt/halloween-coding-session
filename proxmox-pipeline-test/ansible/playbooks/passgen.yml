@@ -1,0 +1,4 @@
+- hosts: passgen
+  become: true
+  roles:
+    - passgen
