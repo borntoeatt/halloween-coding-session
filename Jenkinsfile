@@ -2,7 +2,7 @@ pipeline {
   agent any
 
   parameters {
-    string(name: 'TEST_ROLES', defaultValue: 'testbox,nextcloud', description: 'Comma-separated container roles')
+    string(name: 'TEST_ROLES', defaultValue: 'testbox,nextcloud,passgen', description: 'Comma-separated container roles')
   }
 
   environment {
