@@ -38,7 +38,7 @@ resource "proxmox_virtual_environment_container" "testbox" {
 
 # Nextcloud container
 resource "proxmox_virtual_environment_container" "nextcloud" {
-  depends_on = [proxmox_virtual_environment_container.testbox]
+  #depends_on = [proxmox_virtual_environment_container.testbox]
   node_name  = "pve"
   vm_id      = 20009
   clone {
@@ -72,7 +72,7 @@ resource "proxmox_virtual_environment_container" "nextcloud" {
 
 # Passgen container
 resource "proxmox_virtual_environment_container" "passgen" {
-  depends_on = [proxmox_virtual_environment_container.testbox]
+  #depends_on = [proxmox_virtual_environment_container.testbox]
   node_name  = "pve"
   vm_id      = 20010
   clone {
