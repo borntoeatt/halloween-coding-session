@@ -1,0 +1,65 @@
+---
+
+- name: Ensure dependencies installed
+  apt:
+    name:
+      - python3
+      - python3-venv
+      - python3-pip
+      - git
+      - nginx
+    state: present
+    update_cache: yes
+
+- name: Clone the repository
+  git:
+    repo: "{{ app_repo }}"
+    dest: "{{ app_dir }}"
+    version: "{{ app_branch }}"
+    force: yes
+
+- name: Create virtual environment
+  command: python3 -m venv venv
+  args:
+    chdir: "{{ app_dir }}"
+  creates: "{{ app_dir }}/venv"
+
+- name: Install dependencies inside venv
+  pip:
+    requirements: "{{ app_dir }}/requirements.txt"
+    virtualenv: "{{ app_dir }}/venv"
+
+- name: Deploy Gunicorn systemd service
+  template:
+    src: passwordapp.service.j2
+    dest: "/etc/systemd/system/{{ app_name }}.service"
+  notify:
+    - restart gunicorn
+
+- name: Enable and start the service
+  systemd:
+    name: "{{ app_name }}"
+    state: started
+    enabled: yes
+
+- name: Deploy nginx config
+  template:
+    src: nginx.conf.j2
+    dest: "/etc/nginx/sites-available/{{ app_name }}"
+  notify:
+    - restart nginx
+
+- name: Enable nginx site
+  file:
+    src: "/etc/nginx/sites-available/{{ app_name }}"
+    dest: "/etc/nginx/sites-enabled/{{ app_name }}"
+    state: link
+    force: yes
+
+# Optional: remove default nginx page
+- name: Remove default nginx site
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify:
+    - restart nginx
