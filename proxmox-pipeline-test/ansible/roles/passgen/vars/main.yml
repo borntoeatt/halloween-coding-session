@@ -1,0 +1,10 @@
+app_name: "passgen"
+app_user: "root"
+app_dir: "/opt/passgen"
+app_repo: "https://github.com/YOURUSER/passgen.git"
+app_branch: "main"
+
+gunicorn_workers: 4
+gunicorn_bind: "127.0.0.1:5000"
+
+domain_name: "passgen.yourdomain.com"
