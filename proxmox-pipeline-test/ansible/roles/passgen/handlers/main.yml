@@ -1,11 +1,13 @@
 ---
+- name: Reload systemd
+  command: systemctl daemon-reload
 
-- name: restart nginx
+- name: Restart passgen
   systemd:
-    name: nginx
+    name: passgen
     state: restarted
 
-- name: restart gunicorn
+- name: Restart nginx
   systemd:
-    name: "{{ app_name }}"
+    name: nginx
     state: restarted
