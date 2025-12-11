@@ -1,6 +1,9 @@
 ---
 # roles/testbox/tasks/main.yml
 
+##############################################
+# Install base system packages
+##############################################
 - name: Install required base packages
   apt:
     name:
@@ -16,8 +19,10 @@
     state: present
     update_cache: true
 
+
 ##############################################
-# FIX: Determine correct Docker repo codename
+# Detect correct Docker repo codename
+# (Fixes LXC misreporting Ubuntu noble)
 ##############################################
 
 - name: Set Docker codename for Debian
@@ -25,7 +30,7 @@
     docker_repo_codename: "{{ ansible_distribution_release }}"
   when: ansible_os_family == "Debian"
 
-- name: Override incorrect codenames for Debian (e.g., noble)
+- name: Fix Debian codename if LXC wrongly reports Ubuntu noble
   set_fact:
     docker_repo_codename: "bookworm"
   when:
@@ -37,18 +42,15 @@
     docker_repo_codename: "{{ ansible_distribution_release }}"
   when: ansible_os_family == "Ubuntu"
 
+
 ##############################################
-# Add Docker GPG key
+# Docker APT repository + GPG
 ##############################################
 
 - name: Add Docker GPG key
   apt_key:
     url: https://download.docker.com/linux/{{ ansible_os_family | lower }}/gpg
     state: present
-
-##############################################
-# Add Correct Docker Repository
-##############################################
 
 - name: Add Docker repository
   apt_repository:
@@ -58,11 +60,12 @@
       {{ docker_repo_codename }} stable
     state: present
 
+
 ##############################################
-# Install Docker Engine
+# Install Docker engine
 ##############################################
 
-- name: Ensure latest Docker engine and runtime are installed
+- name: Install Docker Engine and components
   apt:
     name:
       - docker-ce
@@ -79,8 +82,9 @@
     state: started
     enabled: true
 
+
 ##############################################
-# Python venv for Docker SDK
+# Python environment for Docker SDK
 ##############################################
 
 - name: Create Python venv for Docker SDK
@@ -88,46 +92,50 @@
   args:
     creates: /opt/docker-venv
 
-- name: Install Docker SDK in virtual environment
-  command: /opt/docker-venv/bin/pip install docker
+- name: Install Docker SDK system-wide
+  pip:
+    name: docker
+
 
 ##############################################
 # Add user to Docker group
 ##############################################
-
 - name: Add ansibletest user to docker group
   user:
     name: ansibletest
     groups: docker
     append: true
 
+
 ##############################################
-# Static HTML Test Site
+# Static test website
 ##############################################
 
 - name: Create static HTML directory
   file:
     path: /home/ansible/static
     state: directory
-    mode: '0755'
+    mode: "0755"
 
 - name: Create static HTML index page
   copy:
     dest: /home/ansible/static/index.html
-    content: "<h1>Welcome to Hackwell Inc — we deploy like pros 🚀</h1>"
-    mode: '0644'
+    mode: "0644"
+    content: |
+      <h1>Welcome to Hackwell Inc — we deploy like pros 🚀</h1>
+
 
 ##############################################
-# Deploy Nginx Docker Container
+# Nginx container deployment
 ##############################################
 
-- name: Remove existing Nginx container if present
+- name: Remove existing Nginx container
   community.docker.docker_container:
     name: static-site
     state: absent
     force_kill: true
 
-- name: Run Nginx container for static site
+- name: Run Nginx container to serve static page
   community.docker.docker_container:
     name: static-site
     image: nginx:alpine
