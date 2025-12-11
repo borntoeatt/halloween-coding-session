@@ -31,7 +31,7 @@
 ##############################################
 - name: Clone passgen repository
   git:
-    repo: "https://github.com/borntoeatt/halloween-coding-session.git"
+    repo: "https://github.com/borntoeatt/passgen.git"
     dest: /opt/passgen
     version: main
     force: yes
