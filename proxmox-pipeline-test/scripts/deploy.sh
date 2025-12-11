@@ -19,7 +19,7 @@ SLEEP_INTERVAL=5
 # ROLE ARGUMENTS
 # ------------------------------
 IFS=',' read -ra SELECTED_ROLES <<< "${1:-all}"
-all_containers=(testbox nextcloud grafana jenkins influxdb)
+all_containers=(testbox nextcloud grafana jenkins influxdb passgen)
 
 # Validate roles
 if [[ "${SELECTED_ROLES[*]}" != "all" ]]; then
