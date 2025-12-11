@@ -1,65 +1,123 @@
 ---
+# roles/passgen/tasks/main.yml
 
-- name: Ensure dependencies installed
+##############################################
+# Install dependencies
+##############################################
+- name: Install required packages
   apt:
     name:
       - python3
       - python3-venv
       - python3-pip
-      - git
       - nginx
+      - git
     state: present
-    update_cache: yes
+    update_cache: true
 
-- name: Clone the repository
+##############################################
+# Create application directory
+##############################################
+- name: Create app directory
+  file:
+    path: /opt/passgen
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+##############################################
+# Clone your repo
+##############################################
+- name: Clone passgen repository
   git:
-    repo: "{{ app_repo }}"
-    dest: "{{ app_dir }}"
-    version: "{{ app_branch }}"
-    force: yes
+    repo: "https://github.com/YOUR_GITHUB/passgen.git"
+    dest: /opt/passgen
+    version: main
+  notify: Restart passgen
 
+##############################################
+# Create Python virtual environment
+##############################################
 - name: Create virtual environment
-  command: python3 -m venv venv
+  command: python3 -m venv /opt/passgen/venv
   args:
-    chdir: "{{ app_dir }}"
-  creates: "{{ app_dir }}/venv"
+    creates: /opt/passgen/venv
 
-- name: Install dependencies inside venv
-  pip:
-    requirements: "{{ app_dir }}/requirements.txt"
-    virtualenv: "{{ app_dir }}/venv"
+##############################################
+# Install Python dependencies into venv
+##############################################
+- name: Install Python dependencies
+  command: /opt/passgen/venv/bin/pip install -r /opt/passgen/requirements.txt
+  args:
+    chdir: /opt/passgen
+  notify: Restart passgen
 
-- name: Deploy Gunicorn systemd service
-  template:
-    src: passwordapp.service.j2
-    dest: "/etc/systemd/system/{{ app_name }}.service"
-  notify:
-    - restart gunicorn
+##############################################
+# Systemd service for Flask app
+##############################################
+- name: Install passgen systemd service
+  copy:
+    dest: /etc/systemd/system/passgen.service
+    mode: '0644'
+    content: |
+      [Unit]
+      Description=PassGen Flask Application
+      After=network.target
 
-- name: Enable and start the service
+      [Service]
+      WorkingDirectory=/opt/passgen
+      ExecStart=/opt/passgen/venv/bin/python3 app.py
+      Restart=always
+      User=root
+
+      [Install]
+      WantedBy=multi-user.target
+  notify: Reload systemd
+
+##############################################
+# Enable & start service
+##############################################
+- name: Enable and start passgen service
   systemd:
-    name: "{{ app_name }}"
+    name: passgen
+    enabled: true
     state: started
-    enabled: yes
 
-- name: Deploy nginx config
-  template:
-    src: nginx.conf.j2
-    dest: "/etc/nginx/sites-available/{{ app_name }}"
-  notify:
-    - restart nginx
+##############################################
+# Nginx reverse proxy
+##############################################
+- name: Install nginx config
+  copy:
+    dest: /etc/nginx/sites-available/passgen
+    mode: '0644'
+    content: |
+      server {
+          listen 80;
+          server_name passgen.local;
+
+          location / {
+              proxy_pass http://127.0.0.1:5000;
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+          }
+      }
+  notify: Restart nginx
 
 - name: Enable nginx site
   file:
-    src: "/etc/nginx/sites-available/{{ app_name }}"
-    dest: "/etc/nginx/sites-enabled/{{ app_name }}"
+    src: /etc/nginx/sites-available/passgen
+    dest: /etc/nginx/sites-enabled/passgen
     state: link
-    force: yes
+  notify: Restart nginx
 
-# Optional: remove default nginx page
-- name: Remove default nginx site
-  file:
-    path: /etc/nginx/sites-enabled/default
-    state: absent
-  notify:
-    - restart nginx
+##############################################
+# Handlers
+##############################################
+handlers:
+  - name: Reload systemd
+    command: systemctl daemon-reload
+
+  - name: Restart passgen
+    systemd:
+      name:
