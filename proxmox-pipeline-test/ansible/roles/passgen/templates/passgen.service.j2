@@ -1,0 +1,15 @@
+[Unit]
+Description=Gunicorn instance for {{ app_name }}
+After=network.target
+
+[Service]
+User={{ app_user }}
+Group=www-data
+WorkingDirectory={{ app_dir }}
+Environment="PATH={{ app_dir }}/venv/bin"
+ExecStart={{ app_dir }}/venv/bin/gunicorn -w {{ gunicorn_workers }} -b {{ gunicorn_bind }} app:app
+
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
