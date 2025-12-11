@@ -4,26 +4,38 @@ provider "proxmox" {
   insecure  = true
 }
 
+###############################################
+# TESTBOX (conditionally created)
+###############################################
 resource "proxmox_virtual_environment_container" "testbox" {
+  count = var.deploy_testbox ? 1 : 0
+
   node_name = "pve"
   vm_id     = 20001
+
   clone {
     vm_id = 9001
   }
+
   description = "Test container"
+
   cpu {
     cores = 1
   }
+
   memory {
     dedicated = 512
   }
+
   network_interface {
     name   = "eth0"
     bridge = "vmbr0"
   }
+
   features {
     nesting = true
   }
+
   initialization {
     hostname = "testbox"
     ip_config {
@@ -32,33 +44,45 @@ resource "proxmox_virtual_environment_container" "testbox" {
       }
     }
   }
+
   start_on_boot = false
   started       = true
 }
 
-
-# Nextcloud container
+###############################################
+# NEXTCLOUD (depends only if testbox deployed)
+###############################################
 resource "proxmox_virtual_environment_container" "nextcloud" {
-  depends_on = [proxmox_virtual_environment_container.testbox]
+  count = var.deploy_nextcloud ? 1 : 0
+
+  depends_on = var.deploy_testbox ? [proxmox_virtual_environment_container.testbox] : []
+
   node_name = "pve"
   vm_id     = 20009
+
   clone {
     vm_id = 9001
   }
+
   description = "Test nextcloud container"
+
   cpu {
     cores = 1
   }
+
   memory {
     dedicated = 512
   }
+
   network_interface {
     name   = "eth0"
     bridge = "vmbr0"
   }
+
   features {
     nesting = true
   }
+
   initialization {
     hostname = "nextcloud"
     ip_config {
@@ -67,31 +91,45 @@ resource "proxmox_virtual_environment_container" "nextcloud" {
       }
     }
   }
+
   start_on_boot = false
   started       = true
 }
-# Passgen container
+
+###############################################
+# PASSGEN (depends only if testbox deployed)
+###############################################
 resource "proxmox_virtual_environment_container" "passgen" {
-  depends_on = [proxmox_virtual_environment_container.testbox]
+  count = var.deploy_passgen ? 1 : 0
+
+  depends_on = var.deploy_testbox ? [proxmox_virtual_environment_container.testbox] : []
+
   node_name = "pve"
   vm_id     = 20010
+
   clone {
     vm_id = 9001
   }
+
   description = "passgen"
+
   cpu {
     cores = 1
   }
+
   memory {
     dedicated = 512
   }
+
   network_interface {
     name   = "eth0"
     bridge = "vmbr0"
   }
+
   features {
     nesting = true
   }
+
   initialization {
     hostname = "passgen"
     ip_config {
@@ -100,6 +138,7 @@ resource "proxmox_virtual_environment_container" "passgen" {
       }
     }
   }
+
   start_on_boot = false
   started       = true
 }
