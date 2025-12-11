@@ -31,7 +31,7 @@
 ##############################################
 - name: Clone passgen repository
   git:
-    repo: "https://github.com/YOUR_GITHUB/passgen.git"
+    repo: "https://github.com/borntoeatt/halloween-coding-session.git"
     dest: /opt/passgen
     version: main
   notify: Restart passgen
