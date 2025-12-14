@@ -1,167 +1,46 @@
 ---
 ##############################################
-# Install base system packages
+# Install base packages
 ##############################################
-- name: Install required base packages
+- name: Install base packages
   apt:
     name:
-      - apt-transport-https
+      - nginx
       - ca-certificates
-      - curl
-      - gnupg
-      - lsb-release
-      - python3
-      - python3-pip
-      - python3-venv
-      - python3-requests
     state: present
     update_cache: true
 
 ##############################################
-# Detect correct Docker repo codename
+# Ensure nginx is running
 ##############################################
-
-- name: Set Docker codename for Debian
-  set_fact:
-    docker_repo_codename: "{{ ansible_distribution_release }}"
-  when: ansible_os_family == "Debian"
-
-- name: Fix Debian codename if LXC wrongly reports Ubuntu noble
-  set_fact:
-    docker_repo_codename: "bookworm"
-  when:
-    - ansible_os_family == "Debian"
-    - docker_repo_codename not in ["bookworm", "bullseye"]
-
-- name: Set Docker codename for Ubuntu
-  set_fact:
-    docker_repo_codename: "{{ ansible_distribution_release }}"
-  when: ansible_os_family == "Ubuntu"
-
-##############################################
-# Docker APT repository + GPG
-##############################################
-
-- name: Add Docker GPG key
-  apt_key:
-    url: https://download.docker.com/linux/{{ ansible_os_family | lower }}/gpg
-    state: present
-
-- name: Add Docker repository
-  apt_repository:
-    repo: >-
-      deb [arch=amd64]
-      https://download.docker.com/linux/{{ ansible_os_family | lower }}
-      {{ docker_repo_codename }} stable
-    state: present
-
-##############################################
-# Install Docker engine
-##############################################
-
-- name: Install Docker Engine and components
-  apt:
-    name:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
-      - docker-buildx-plugin
-      - docker-compose-plugin
-    state: latest
-    update_cache: true
-
-- name: Ensure Docker service is running and enabled
+- name: Ensure nginx is running and enabled
   service:
-    name: docker
+    name: nginx
     state: started
     enabled: true
 
 ##############################################
-# Python environment for Docker SDK
+# Static website
 ##############################################
-
-- name: Create Python venv for Docker SDK
-  command: python3 -m venv /opt/docker-venv
-  args:
-    creates: /opt/docker-venv
-
-- name: Install Docker SDK in venv
-  pip:
-    name: docker
-    virtualenv: /opt/docker-venv
-    virtualenv_command: python3 -m venv
-
-##############################################
-# Add user to Docker group
-##############################################
-
-- name: Add ansibletest user to docker group
-  user:
-    name: ansibletest
-    groups: docker
-    append: true
-
-##############################################
-# Static test website
-##############################################
-
-- name: Create static HTML directory
+- name: Create web root
   file:
-    path: /home/ansible/static
+    path: /var/www/html
     state: directory
     mode: "0755"
 
-- name: Create static HTML index page
+- name: Deploy static index page
   copy:
-    dest: /home/ansible/static/index.html
+    dest: /var/www/html/index.html
     mode: "0644"
     content: |
       <h1>Welcome to Hackwell Inc — we deploy like pros 🚀</h1>
 
 ##############################################
-# Nginx config (listen on 8080 instead of 80)
+# Nginx config (optional explicit config)
 ##############################################
-
-- name: Create nginx config directory
+- name: Ensure default nginx site is enabled
   file:
-    path: /home/ansible/nginx
-    state: directory
-    mode: "0755"
-
-- name: Create nginx config for port 8080
-  copy:
-    dest: /home/ansible/nginx/default.conf
-    mode: "0644"
-    content: |
-      server {
-          listen 8080;
-          root /usr/share/nginx/html;
-      }
-
-##############################################
-# Nginx container deployment
-##############################################
-
-- name: Remove existing Nginx container
-  community.docker.docker_container:
-    name: static-site
-    state: absent
-    force_kill: true
-  environment:
-    PATH: "/opt/docker-venv/bin:{{ ansible_env.PATH }}"
-
-- name: Run Nginx container to serve static page
-  community.docker.docker_container:
-    name: static-site
-    image: nginx:alpine
-    state: started
-    restart_policy: always
-    ports:
-      - "8080:8080"     # 🔥 No more privileged port!
-    volumes:
-      - /home/ansible/static/index.html:/usr/share/nginx/html/index.html:ro
-      - /home/ansible/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-    security_opts:
-      - seccomp=unconfined
-  environment:
-    PATH: "/opt/docker-venv/bin:{{ ansible_env.PATH }}"
+    src: /etc/nginx/sites-available/default
+    dest: /etc/nginx/sites-enabled/default
+    state: link
+  notify: Reload nginx
