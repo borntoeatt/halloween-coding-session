@@ -27,13 +27,23 @@
     path: /var/www/html
     state: directory
     mode: "0755"
-
-- name: Deploy static index page
+    
+- name: Deploy static index page (UTF-8 safe)
   copy:
     dest: /var/www/html/index.html
     mode: "0644"
     content: |
-      <h1>Welcome to Hackwell Inc — we deploy like pros 🚀</h1>
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>Hackwell Inc</title>
+      </head>
+      <body>
+        <h1>Welcome to Hackwell Inc — we deploy like pros 🚀</h1>
+      </body>
+      </html>
+
 
 ##############################################
 # Nginx config (optional explicit config)
