@@ -1,0 +1,5 @@
+# roles/testbox/handlers/main.yml
+- name: Reload nginx
+  service:
+    name: nginx
+    state: reloaded
